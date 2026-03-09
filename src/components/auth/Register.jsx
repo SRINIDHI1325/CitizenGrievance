@@ -1,0 +1,125 @@
+// src/components/auth/Register.jsx
+import React, { useState } from "react";
+import { auth, googleProvider, githubProvider } from "../../firebase/firebase";
+import { createUserWithEmailAndPassword, signInWithPopup } from "firebase/auth";
+import { useNavigate, Link } from "react-router-dom";
+
+function Register() {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
+  const navigate = useNavigate();
+
+  // Email/password signup
+  const handleSignup = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    try {
+      await createUserWithEmailAndPassword(auth, email, password);
+      alert("Signup successful!");
+      navigate("/dashboard");
+    } catch (err) {
+      alert(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Social login handlers
+  const handleGoogleLogin = async () => {
+    try {
+      await signInWithPopup(auth, googleProvider);
+      navigate("/dashboard");
+    } catch (err) {
+      alert(err.message);
+    }
+  };
+
+  const handleGithubLogin = async () => {
+    try {
+      await signInWithPopup(auth, githubProvider);
+      navigate("/dashboard");
+    } catch (err) {
+      alert(err.message);
+    }
+  };
+
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 p-4">
+      <div className="bg-white p-10 rounded-2xl shadow-2xl w-full max-w-md transform transition duration-500 hover:scale-105">
+        <h2 className="text-4xl font-extrabold text-gray-800 text-center mb-8">Create Account</h2>
+        <p className="text-center text-gray-500 mb-6">Sign up to get started</p>
+
+        {/* Email/password form */}
+        <form onSubmit={handleSignup} className="space-y-6">
+          <div>
+            <label className="block text-gray-700 mb-2 font-medium">Email</label>
+            <input
+              type="email"
+              placeholder="Enter your email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+              className="w-full px-5 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            />
+          </div>
+
+          <div>
+            <label className="block text-gray-700 mb-2 font-medium">Password</label>
+            <input
+              type="password"
+              placeholder="Enter your password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+              className="w-full px-5 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            />
+          </div>
+
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full py-3 bg-blue-500 text-white font-bold rounded-lg hover:bg-blue-600 transition duration-300"
+          >
+            {loading ? "Creating..." : "Register"}
+          </button>
+        </form>
+
+        {/* Divider */}
+        <div className="my-6 flex items-center justify-center">
+          <span className="border-b w-1/5 lg:w-1/4"></span>
+          <span className="text-gray-500 px-2">or</span>
+          <span className="border-b w-1/5 lg:w-1/4"></span>
+        </div>
+
+        {/* Social login buttons */}
+        <div className="flex flex-col gap-4">
+          <button
+            onClick={handleGoogleLogin}
+            className="flex items-center justify-center gap-2 w-full py-3 border rounded-lg hover:bg-gray-100 transition"
+          >
+            <img src="https://img.icons8.com/color/24/google-logo.png" alt="Google" />
+            Continue with Google
+          </button>
+
+          <button
+            onClick={handleGithubLogin}
+            className="flex items-center justify-center gap-2 w-full py-3 border rounded-lg hover:bg-gray-100 transition"
+          >
+            <img src="https://img.icons8.com/ios-glyphs/24/github.png" alt="GitHub" />
+            Continue with GitHub
+          </button>
+        </div>
+
+        <p className="text-center text-gray-500 mt-6">
+          Already have an account?{" "}
+          <Link to="/login" className="text-blue-500 font-semibold hover:underline">
+            Login
+          </Link>
+        </p>
+      </div>
+    </div>
+  );
+}
+
+export default Register;
