@@ -19,6 +19,10 @@ import UpdateStatus from "./pages/officer/UpdateStatus";
 
 // Admin Features
 import CreateUser from "./pages/admin/CreateUser";
+import Login from "./components/auth/Login";
+import Register from "./components/auth/Register";
+
+
 
 // Auth
 import Login from "./components/auth/Login";

@@ -13,7 +13,7 @@ function Login() {
 
   const navigate = useNavigate();
 
-  // Email/password login
+  // ---------------- Email/Password Login ----------------
   const handleLogin = async (e) => {
 
     e.preventDefault();
@@ -66,6 +66,8 @@ function Login() {
 
     } catch (err) {
       alert(err.message);
+    } finally {
+      setLoading(false);
     }
 
   };
