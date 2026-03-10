@@ -27,43 +27,56 @@ function ComplaintHistory() {
   }, []);
 
   return (
-    <div>
-      <h2>Complaint History</h2>
+    <div className="min-h-screen bg-[#0d0814] text-white p-8">
 
-      <table border="1" cellPadding="10">
-        <thead>
-          <tr>
-            <th>Title</th>
-            <th>Category</th>
-            <th>Description</th>
-            <th>Image</th>
-            <th>Status</th>
-          </tr>
-        </thead>
+      <h2 className="text-3xl font-bold text-[#ccff00] mb-8">
+        Complaint History
+      </h2>
 
-        <tbody>
-          {complaints.map((c) => (
-            <tr key={c.id}>
-              <td>{c.title}</td>
-              <td>{c.category}</td>
-              <td>{c.description}</td>
+      <div className="bg-[#241835]/70 backdrop-blur-lg border border-[#6f06f9]/40 rounded-xl p-6 shadow-lg overflow-x-auto">
 
-              <td>
-                {c.imageUrl && (
-                  <img
-                    src={c.imageUrl}
-                    alt="complaint"
-                    width="80"
-                  />
-                )}
-              </td>
+        <table className="w-full text-left">
 
-              <td>{c.status}</td>
+          <thead>
+            <tr className="text-[#ccff00]">
+              <th className="p-3">Title</th>
+              <th className="p-3">Category</th>
+              <th className="p-3">Description</th>
+              <th className="p-3">Image</th>
+              <th className="p-3">Status</th>
             </tr>
-          ))}
-        </tbody>
+          </thead>
 
-      </table>
+          <tbody>
+
+            {complaints.map((c) => (
+              <tr key={c.id} className="border-t border-[#6f06f9]/30">
+
+                <td className="p-3">{c.title}</td>
+                <td className="p-3">{c.category}</td>
+                <td className="p-3">{c.description}</td>
+
+                <td className="p-3">
+                  {c.imageUrl && (
+                    <img
+                      src={c.imageUrl}
+                      alt="complaint"
+                      className="w-20 rounded"
+                    />
+                  )}
+                </td>
+
+                <td className="p-3">{c.status}</td>
+
+              </tr>
+            ))}
+
+          </tbody>
+
+        </table>
+
+      </div>
+
     </div>
   );
 }
