@@ -9,6 +9,7 @@ function TrackComplaint() {
   const steps = ["Submitted", "Assigned", "In Progress", "Resolved"];
 
   const fetchComplaints = async () => {
+
     const querySnapshot = await getDocs(collection(db, "complaints"));
 
     const list = querySnapshot.docs.map((doc) => ({
@@ -24,36 +25,42 @@ function TrackComplaint() {
   }, []);
 
   return (
-    <div>
+    <div className="min-h-screen bg-[#0d0814] text-white p-8">
 
-      <h2>Track Complaints</h2>
+      <h2 className="text-3xl font-bold text-[#ccff00] mb-8">
+        Track Complaints
+      </h2>
 
       {complaints.map((c) => {
 
         const currentStep = steps.indexOf(c.status);
 
         return (
-          <div key={c.id} style={{border:"1px solid gray", padding:"15px", marginBottom:"20px"}}>
 
-            <h3>{c.title}</h3>
-            <p>{c.description}</p>
+          <div
+            key={c.id}
+            className="bg-[#241835]/70 backdrop-blur-lg border border-[#6f06f9]/40 rounded-xl p-6 shadow-lg mb-6"
+          >
 
-            <div style={{display:"flex", gap:"20px"}}>
+            <h3 className="text-xl font-semibold mb-2">{c.title}</h3>
+
+            <p className="text-gray-400 mb-4">{c.description}</p>
+
+            <div className="flex gap-6">
 
               {steps.map((step, index) => (
 
-                <div key={index}>
+                <div key={index} className="text-center">
 
                   <div
-                    style={{
-                      width: "30px",
-                      height: "30px",
-                      borderRadius: "50%",
-                      backgroundColor: index <= currentStep ? "green" : "gray"
-                    }}
+                    className={`w-8 h-8 rounded-full mx-auto ${
+                      index <= currentStep
+                        ? "bg-green-500"
+                        : "bg-gray-600"
+                    }`}
                   />
 
-                  <p>{step}</p>
+                  <p className="text-sm mt-1">{step}</p>
 
                 </div>
 
@@ -62,6 +69,7 @@ function TrackComplaint() {
             </div>
 
           </div>
+
         );
 
       })}
