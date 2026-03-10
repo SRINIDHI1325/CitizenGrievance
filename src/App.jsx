@@ -11,6 +11,10 @@ import TrackComplaint from "./pages/citizen/TrackComplaint";
 
 import PrivateRoute from "./routes/PrivateRoute";
 import CreateUser from "./pages/admin/CreateUser";
+import Login from "./components/auth/Login";
+import Register from "./components/auth/Register";
+
+
 
 function App() {
 
@@ -20,6 +24,8 @@ function App() {
     <Router>
 
       <Routes>
+        <Route path="/login" element={<Login />} />
+        <Route path="/register" element={<Register />} />
         <Route
   path="/create-user"
   element={

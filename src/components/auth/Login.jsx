@@ -1,9 +1,9 @@
 // src/components/auth/Login.jsx
 import React, { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import { auth, googleProvider, githubProvider } from "../../firebase/firebase";
-import { signInWithPopup } from "firebase/auth";
-import { login } from "../../firebase/authService"; // your email/password login function
+import { auth, googleProvider, githubProvider, db } from "../../firebase/firebase";
+import { signInWithPopup, signInWithEmailAndPassword, sendPasswordResetEmail } from "firebase/auth";
+import { doc, getDoc } from "firebase/firestore";
 
 function Login() {
   const [email, setEmail] = useState("");
@@ -11,43 +11,83 @@ function Login() {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
-  // Email/password login
+  // ---------------- Email/Password Login ----------------
   const handleLogin = async (e) => {
-  e.preventDefault();
-  setLoading(true);
+    e.preventDefault();
+    setLoading(true);
 
-  try {
-    const userCredential = await login(email, password);
-    console.log(userCredential);
-
-    // TEMP redirect
-    navigate("/citizen");
-
-  } catch (err) {
-    alert(err.message);
-  } finally {
-    setLoading(false);
-  }
-};
-
-  // Social login handlers
-  const handleGoogleLogin = async () => {
     try {
-      const result = await signInWithPopup(auth, googleProvider);
-const role = "citizen"; // default role for social login
+      // 1️⃣ Sign in with Firebase Auth
+      const userCredential = await signInWithEmailAndPassword(auth, email, password);
+      const uid = userCredential.user.uid;
 
-if (role === "citizen") {
-  navigate("/citizen");
-}
+      // 2️⃣ Get user role from Firestore
+      const userDocRef = doc(db, "users", uid);
+      const userDoc = await getDoc(userDocRef);
+
+      if (!userDoc.exists()) {
+        alert("Your account is not registered. Please contact admin.");
+        setLoading(false);
+        return;
+      }
+
+      const role = userDoc.data().role;
+
+      // 3️⃣ Redirect based on role
+      if (role === "admin") navigate("/admin/dashboard");
+      else if (role === "officer") navigate("/officer/dashboard");
+      else navigate("/citizen/dashboard");
+
     } catch (err) {
       alert(err.message);
+    } finally {
+      setLoading(false);
     }
   };
 
-  const handleGithubLogin = async () => {
+  // ---------------- Social Login (Google & GitHub) ----------------
+  const handleSocialLogin = async (provider) => {
+    setLoading(true);
+
     try {
-      await signInWithPopup(auth, githubProvider);
-      navigate("/dashboard");
+      // 1️⃣ Sign in with popup
+      const result = await signInWithPopup(auth, provider);
+      const uid = result.user.uid;
+
+      // 2️⃣ Get user role from Firestore
+      const userRef = doc(db, "users", uid);
+      const userDoc = await getDoc(userRef);
+
+      if (!userDoc.exists()) {
+        // Account not registered
+        alert("Your account is not registered. Please contact admin.");
+        setLoading(false);
+        return;
+      }
+
+      const role = userDoc.data().role;
+
+      // 3️⃣ Redirect based on role
+      if (role === "admin") navigate("/admin/dashboard");
+      else if (role === "officer") navigate("/officer/dashboard");
+      else navigate("/citizen/dashboard");
+
+    } catch (err) {
+      alert(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // ---------------- Forgot Password ----------------
+  const handleForgotPassword = async () => {
+    if (!email) {
+      alert("Please enter your email first.");
+      return;
+    }
+    try {
+      await sendPasswordResetEmail(auth, email);
+      alert("Password reset email sent! Check your inbox.");
     } catch (err) {
       alert(err.message);
     }
@@ -56,11 +96,10 @@ if (role === "citizen") {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 p-4">
       <div className="bg-white p-10 rounded-2xl shadow-2xl w-full max-w-md transform transition duration-500 hover:scale-105">
-        <h2 className="text-4xl font-extrabold text-gray-800 text-center mb-8">Welcome Back</h2>
+        <h2 className="text-4xl font-extrabold text-gray-800 text-center mb-4">Welcome Back</h2>
         <p className="text-center text-gray-500 mb-6">Login to your account</p>
 
-        {/* Email/password form */}
-        <form onSubmit={handleLogin} className="space-y-6">
+        <form onSubmit={handleLogin} className="space-y-4">
           <div>
             <label className="block text-gray-700 mb-2 font-medium">Email</label>
             <input
@@ -94,17 +133,22 @@ if (role === "citizen") {
           </button>
         </form>
 
-        {/* Divider */}
+        <p
+          onClick={handleForgotPassword}
+          className="text-right text-purple-500 text-sm mt-2 cursor-pointer hover:underline"
+        >
+          Forgot Password?
+        </p>
+
         <div className="my-6 flex items-center justify-center">
           <span className="border-b w-1/5 lg:w-1/4"></span>
           <span className="text-gray-500 px-2">or</span>
           <span className="border-b w-1/5 lg:w-1/4"></span>
         </div>
 
-        {/* Social login buttons */}
         <div className="flex flex-col gap-4">
           <button
-            onClick={handleGoogleLogin}
+            onClick={() => handleSocialLogin(googleProvider)}
             className="flex items-center justify-center gap-2 w-full py-3 border rounded-lg hover:bg-gray-100 transition"
           >
             <img src="https://img.icons8.com/color/24/google-logo.png" alt="Google" />
@@ -112,7 +156,7 @@ if (role === "citizen") {
           </button>
 
           <button
-            onClick={handleGithubLogin}
+            onClick={() => handleSocialLogin(githubProvider)}
             className="flex items-center justify-center gap-2 w-full py-3 border rounded-lg hover:bg-gray-100 transition"
           >
             <img src="https://img.icons8.com/ios-glyphs/24/github.png" alt="GitHub" />
