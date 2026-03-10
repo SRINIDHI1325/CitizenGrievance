@@ -13,23 +13,32 @@ function Login() {
 
   // Email/password login
   const handleLogin = async (e) => {
-    e.preventDefault();
-    setLoading(true);
-    try {
-      await login(email, password);
-      navigate("/dashboard");
-    } catch (err) {
-      alert(err.message);
-    } finally {
-      setLoading(false);
-    }
-  };
+  e.preventDefault();
+  setLoading(true);
+
+  try {
+    const userCredential = await login(email, password);
+    console.log(userCredential);
+
+    // TEMP redirect
+    navigate("/citizen");
+
+  } catch (err) {
+    alert(err.message);
+  } finally {
+    setLoading(false);
+  }
+};
 
   // Social login handlers
   const handleGoogleLogin = async () => {
     try {
-      await signInWithPopup(auth, googleProvider);
-      navigate("/dashboard");
+      const result = await signInWithPopup(auth, googleProvider);
+const role = "citizen"; // default role for social login
+
+if (role === "citizen") {
+  navigate("/citizen");
+}
     } catch (err) {
       alert(err.message);
     }
