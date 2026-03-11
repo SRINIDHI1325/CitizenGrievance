@@ -1,9 +1,9 @@
 // src/components/auth/Login.jsx
 import React, { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import { auth, googleProvider, githubProvider } from "../../firebase/firebase";
-import { signInWithPopup } from "firebase/auth";
-import { login } from "../../firebase/authService";
+import { auth, googleProvider, githubProvider, db } from "../../firebase/firebase";
+import { signInWithPopup, signInWithEmailAndPassword, sendPasswordResetEmail } from "firebase/auth";
+import { doc, getDoc } from "firebase/firestore";
 
 function Login() {
 
@@ -13,36 +13,39 @@ function Login() {
 
   const navigate = useNavigate();
 
-  // ---------------- Email/Password Login ----------------
+  const redirectByRole = (role) => {
+    localStorage.setItem("userRole", role); // store role for PrivateRoute
+    if (role === "admin") navigate("/admin");
+    else if (role === "officer") navigate("/officer/dashboard");
+    else navigate("/citizen/dashboard");
+  };
+
+  // Email/password login
   const handleLogin = async (e) => {
 
     e.preventDefault();
     setLoading(true);
-
     try {
+      // 1️⃣ Sign in with Firebase Auth
+      const userCredential = await signInWithEmailAndPassword(auth, email, password);
+      const uid = userCredential.user.uid;
 
-      const userCredential = await login(email, password);
-      const user = userCredential.user;
+      // 2️⃣ Get user role from Firestore
+      const userDocRef = doc(db, "users", uid);
+      const userDoc = await getDoc(userDocRef);
 
-      // Default role
-      let role = "citizen";
-
-      // Simple role detection (for testing)
-      if (email.includes("officer")) {
-        role = "officer";
+      if (!userDoc.exists()) {
+        alert("Your account is not registered. Please contact admin.");
+        setLoading(false);
+        return;
       }
 
-      if (email.includes("admin")) {
-        role = "admin";
-      }
+      const role = userDoc.data().role;
 
-      // Save role
-      localStorage.setItem("role", role);
-
-      // Redirect based on role
-      if (role === "citizen") navigate("/citizen");
-      if (role === "officer") navigate("/officer");
-      if (role === "admin") navigate("/admin");
+      // 3️⃣ Redirect based on role
+      if (role === "admin") navigate("/admin/dashboard");
+      else if (role === "officer") navigate("/officer/dashboard");
+      else navigate("/citizen/dashboard");
 
     } catch (err) {
       alert(err.message);
@@ -52,17 +55,32 @@ function Login() {
 
   };
 
-  // Google login
-  const handleGoogleLogin = async () => {
+  // ---------------- Social Login (Google & GitHub) ----------------
+  const handleSocialLogin = async (provider) => {
+    setLoading(true);
 
     try {
+      // 1️⃣ Sign in with popup
+      const result = await signInWithPopup(auth, provider);
+      const uid = result.user.uid;
 
-      await signInWithPopup(auth, googleProvider);
+      // 2️⃣ Get user role from Firestore
+      const userRef = doc(db, "users", uid);
+      const userDoc = await getDoc(userRef);
 
-      // Default role for Google users
-      localStorage.setItem("role", "citizen");
+      if (!userDoc.exists()) {
+        // Account not registered
+        alert("Your account is not registered. Please contact admin.");
+        setLoading(false);
+        return;
+      }
 
-      navigate("/citizen");
+      const role = userDoc.data().role;
+
+      // 3️⃣ Redirect based on role
+      if (role === "admin") navigate("/admin/dashboard");
+      else if (role === "officer") navigate("/officer/dashboard");
+      else navigate("/citizen/dashboard");
 
     } catch (err) {
       alert(err.message);
@@ -72,18 +90,15 @@ function Login() {
 
   };
 
-  // GitHub login
-  const handleGithubLogin = async () => {
-
+  // ---------------- Forgot Password ----------------
+  const handleForgotPassword = async () => {
+    if (!email) {
+      alert("Please enter your email first.");
+      return;
+    }
     try {
-
-      await signInWithPopup(auth, githubProvider);
-
-      // Default role
-      localStorage.setItem("role", "citizen");
-
-      navigate("/citizen");
-
+      await sendPasswordResetEmail(auth, email);
+      alert("Password reset email sent! Check your inbox.");
     } catch (err) {
       alert(err.message);
     }
@@ -153,59 +168,44 @@ function Login() {
 
         </form>
 
-        {/* Divider */}
-        <div className="my-6 flex items-center justify-center text-gray-400">
-          <span className="border-b border-gray-600 w-1/5"></span>
-          <span className="px-2">or</span>
-          <span className="border-b border-gray-600 w-1/5"></span>
+        <p
+          onClick={handleForgotPassword}
+          className="text-right text-purple-500 text-sm mt-2 cursor-pointer hover:underline"
+        >
+          Forgot Password?
+        </p>
+
+        <div className="my-6 flex items-center justify-center">
+          <span className="border-b w-1/5 lg:w-1/4"></span>
+          <span className="text-gray-500 px-2">or</span>
+          <span className="border-b w-1/5 lg:w-1/4"></span>
         </div>
 
         {/* Social login */}
         <div className="flex flex-col gap-4">
-
           <button
-            onClick={handleGoogleLogin}
-            className="flex items-center justify-center gap-2 w-full py-3 border border-purple-600/50 rounded-lg hover:bg-purple-700 transition text-white"
+            onClick={() => handleSocialLogin(googleProvider)}
+            className="flex items-center justify-center gap-2 w-full py-3 border rounded-lg hover:bg-gray-100 transition"
           >
-
-            <img
-              src="https://img.icons8.com/color/24/google-logo.png"
-              alt="Google"
-            />
-
+            <img src="https://img.icons8.com/color/24/google-logo.png" alt="Google" />
             Continue with Google
-
           </button>
 
           <button
-            onClick={handleGithubLogin}
-            className="flex items-center justify-center gap-2 w-full py-3 border border-purple-600/50 rounded-lg hover:bg-purple-700 transition text-white"
+            onClick={() => handleSocialLogin(githubProvider)}
+            className="flex items-center justify-center gap-2 w-full py-3 border rounded-lg hover:bg-gray-100 transition"
           >
-
-            <img
-              src="https://img.icons8.com/ios-glyphs/24/github.png"
-              alt="GitHub"
-            />
-
+            <img src="https://img.icons8.com/ios-glyphs/24/github.png" alt="GitHub" />
             Continue with GitHub
-
           </button>
 
         </div>
 
-        <p className="text-center text-gray-400 mt-6">
-
+        <p className="text-center text-gray-500 mt-6">
           Don't have an account?{" "}
-
-          <Link
-            to="/register"
-            className="text-[#ccff00] font-semibold hover:underline"
-          >
-
+          <Link to="/register" className="text-purple-500 font-semibold hover:underline">
             Sign Up
-
           </Link>
-
         </p>
 
       </div>
