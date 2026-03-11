@@ -1,101 +1,63 @@
-import React, { useEffect, useState } from "react";
-import { doc, getDoc, updateDoc, arrayUnion } from "firebase/firestore";
-import { db } from "../../firebase/firebase";
+// src/pages/officer/UpdateStatus.jsx
+import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import { db } from "../../firebase/firebase";
+import { doc, getDoc, updateDoc } from "firebase/firestore";
 
 function UpdateStatus() {
-
-  const { complaintId } = useParams();
-
+  const { id } = useParams();
   const navigate = useNavigate();
+  const [status, setStatus] = useState("Pending");
 
-  const [status, setStatus] = useState("");
-
-  const [remark, setRemark] = useState("");
-
-  const [complaint, setComplaint] = useState(null);
-
+  // Fetch current complaint status
   useEffect(() => {
-
     const fetchComplaint = async () => {
-
-      const docRef = doc(db, "complaints", complaintId);
-
-      const snapshot = await getDoc(docRef);
-
-      if (snapshot.exists()) {
-
-        setComplaint(snapshot.data());
-
-        setStatus(snapshot.data().status);
-
+      try {
+        const complaintRef = doc(db, "complaints", id);
+        const docSnap = await getDoc(complaintRef);
+        if (docSnap.exists()) {
+          setStatus(docSnap.data().status);
+        }
+      } catch (error) {
+        console.error(error);
       }
-
     };
-
     fetchComplaint();
+  }, [id]);
 
-  }, [complaintId]);
-
-  const handleUpdate = async () => {
-
-    if (!status) return alert("Select status");
-
-    const docRef = doc(db, "complaints", complaintId);
-
-    await updateDoc(docRef, {
-      status,
-      remarks: remark ? arrayUnion(remark) : []
-    });
-
-    alert("Status updated successfully");
-
-    navigate("/officer/manage-complaints");
-
+  const updateStatus = async () => {
+    try {
+      const complaintRef = doc(db, "complaints", id);
+      await updateDoc(complaintRef, { status });
+      alert("Status Updated Successfully");
+      navigate("/officer/manage-complaints"); // redirect to complaints list
+    } catch (error) {
+      console.error(error);
+    }
   };
 
-  if (!complaint) return <p>Loading...</p>;
-
   return (
-
-    <div className="min-h-screen bg-[#0d0814] text-white flex justify-center items-center">
-
-      <div className="bg-[#241835] p-8 rounded-lg border border-purple-600 w-96">
-
-        <h2 className="text-2xl font-bold text-[#ccff00] mb-4">
-          Update Status
-        </h2>
-
-        <p className="mb-4">{complaint.title}</p>
+    <div className="min-h-screen flex items-center justify-center bg-[#0d0814] text-white">
+      <div className="bg-[#241835] p-8 rounded-lg w-96">
+        <h2 className="text-xl font-bold mb-4">Update Complaint Status</h2>
 
         <select
           value={status}
           onChange={(e) => setStatus(e.target.value)}
-          className="w-full p-2 bg-[#1a1126] rounded mb-4"
+          className="w-full p-2 mb-4 bg-black text-white"
         >
-
-          <option value="Pending">Pending</option>
-          <option value="In Progress">In Progress</option>
-          <option value="Resolved">Resolved</option>
-
+          <option>Pending</option>
+          <option>In Progress</option>
+          <option>Resolved</option>
         </select>
 
-        <textarea
-          placeholder="Add remark (optional)"
-          value={remark}
-          onChange={(e) => setRemark(e.target.value)}
-          className="w-full p-2 bg-[#1a1126] rounded mb-4"
-        />
-
         <button
-          onClick={handleUpdate}
-          className="w-full py-2 bg-purple-600 rounded hover:bg-purple-700"
+          onClick={updateStatus}
+          className="bg-purple-600 w-full p-2 rounded"
         >
-          Update Status
+          Update
         </button>
-
       </div>
-
     </div>
   );
 }

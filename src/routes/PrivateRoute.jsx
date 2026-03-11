@@ -3,7 +3,7 @@ import React from "react";
 import { Navigate } from "react-router-dom";
 
 const PrivateRoute = ({ children, role }) => {
-  const userRole = localStorage.getItem("userRole");
+  const userRole = localStorage.getItem("role");
 
   if (!userRole) {
     // Not logged in
@@ -12,7 +12,7 @@ const PrivateRoute = ({ children, role }) => {
 
   if (role && role !== userRole) {
     // Logged in but role doesn't match
-    if (userRole === "admin") return <Navigate to="/admin" />;
+    if (userRole === "admin") return <Navigate to="/admin/dashboard" />;
     if (userRole === "officer") return <Navigate to="/officer/dashboard" />;
     return <Navigate to="/citizen/dashboard" />;
   }
